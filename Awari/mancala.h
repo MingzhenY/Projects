@@ -54,6 +54,8 @@ class Mancala
     //2 for draw
     //state = board[15]
 
+    std::string MoveHistory;
+
   public:
     Mancala()
     {
@@ -63,6 +65,10 @@ class Mancala
     {
         Init(Board);
     }
+    std::string History()
+    {
+        return MoveHistory;
+    }
     //Initialize the Game
     void Init()
     {
@@ -70,6 +76,7 @@ class Mancala
         board[6] = board[13] = 0;
         board[14] = false; //player = false
         board[15] = -1;    //state = -1
+        MoveHistory = "#";
     }
     //Initialize the Game using Board
     void Init(std::string Board)
@@ -77,6 +84,7 @@ class Mancala
         if (Board.length() == 16)
         {
             board = Board;
+            MoveHistory = "...";
         }
         else
         {
@@ -223,10 +231,15 @@ class Mancala
     }
     bool Play(std::string &Move)
     {
+        MoveHistory += Move[0];
         return Play(board, Move);
     }
     std::vector<std::string> ValidMovesVec()
     {
+        if (board[15] != -1)
+        {
+            return {};
+        }
         std::vector<std::string> ret;
         int basePit;
         char baseChar;
@@ -292,6 +305,7 @@ class Mancala
     }
     void Show()
     {
+        printf("History(%lu): %s\n", MoveHistory.length(), MoveHistory.c_str());
         printf("      f   e   d   c   b   a\n");
         printf("%3d %3d %3d %3d %3d %3d %3d\n", board[6], board[5], board[4], board[3], board[2], board[1], board[0]);
         printf("    %3d %3d %3d %3d %3d %3d %3d\n", board[7], board[8], board[9], board[10], board[11], board[12], board[13]);

@@ -126,7 +126,7 @@ struct MCTS
             int I = 0;
             while (temp)
             {
-                double value = p->Moves[I][p->Moves[I].length() - 1] == '|' ? temp->X : -temp->X + C * sqrt(2 * log(p->N) / temp->N);
+                double value = (p->Moves[I][p->Moves[I].length() - 1] == '|' ? temp->X : -temp->X) + C * sqrt(2 * log(p->N) / temp->N);
                 if (best_child == NULL || value > best_value)
                 {
                     best_value = value;

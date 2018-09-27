@@ -12,7 +12,6 @@ void Game_MCTS(bool computerFirst = true)
 {
     Awari Game;
     Game.Show();
-
     MCTS<Awari> MC(Game.toString(), 0.8, 10000);
 
     bool flag = computerFirst;
@@ -20,12 +19,12 @@ void Game_MCTS(bool computerFirst = true)
     while (Game.GameOn() && !Error)
     {
         string Move = "#";
-        MC.ShowNextMoves();
         bool Changed = false;
         if (flag)
         {
-            printf("Computer Thinking...  \t\t");
+            printf("Computer Thinking...  \n");
             Move = MC.nextMove();
+            MC.ShowNextMoves();
             if (Move != "#")
             {
                 Changed = Game.Play(Move);

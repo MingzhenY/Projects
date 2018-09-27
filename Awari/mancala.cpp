@@ -6,6 +6,7 @@
 #include <map>
 #include "mcts.h"
 #include "mancala.h"
+#include "gametest.h"
 using namespace std;
 
 void Game_MCTS(bool computerFirst = true)
@@ -13,19 +14,20 @@ void Game_MCTS(bool computerFirst = true)
     Mancala Game;
     Game.Show();
 
-    MCTS<Mancala> MC(Game.toString(), 0.8, 100000);
+    MCTS<Mancala> MC(Game.toString(), 0.4, 100000);
 
     bool flag = computerFirst;
     bool Error = false;
     while (Game.GameOn() && !Error)
     {
         string Move = "#";
-        MC.ShowNextMoves();
+        //MC.ShowNextMoves();
         bool Changed = false;
         if (flag)
         {
             printf("Computer Thinking...  \t\t\n");
             Move = MC.nextMove();
+            MC.ShowNextMoves();
             if (Move != "#")
             {
                 Changed = Game.Play(Move);
@@ -39,7 +41,7 @@ void Game_MCTS(bool computerFirst = true)
         else
         {
             cin >> Move;
-            if (Move == "exit")
+            if (Move == "exit" || Move == "EXIT")
                 break;
             Changed = Game.Play(Move);
         }
@@ -80,6 +82,7 @@ void Game_MCTS(bool computerFirst = true)
         else
         {
             printf("User Interrupt\n");
+            printf("History: %s\n", Game.History().c_str());
         }
         return;
     }
@@ -104,9 +107,11 @@ void Game_MCTS(bool computerFirst = true)
 int main()
 {
     srand(time(NULL));
-    Game_MCTS();
-    //Awari Game;
-    //Game.Show();
-    //cout << Game.RandomSimulation() << endl;
+    GameTest<Mancala> Test;
+    Test.TestAll(false);
+    if (Test.TestAll(false))
+    {
+        Game_MCTS();
+    }
     return 0;
 }

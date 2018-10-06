@@ -10,11 +10,11 @@ using namespace std;
 
 int main()
 {
-    GameTest<TicTacToe> Test;
+    GameTest<Adi> Test;
     if (Test.TestAll(true))
     {
-        GamePlay<TicTacToe> Game;
-        Game.Game_MCTS();
+        GamePlay<Adi> Game;
+        Game.Game_MCTS(true, 1.0, 10000);
     }
     return 0;
 }

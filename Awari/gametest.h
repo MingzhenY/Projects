@@ -14,35 +14,7 @@ Basic rules:
     This should include which player moves next.
 4.A move of the game is represented by std::string.
     The first byte of a move is used (as a boolean) 
-    to indicate if the player to move has changed.
-
-Below are requirements from different sources:
-Rules from mcts.h:
-1.Game.Game() initializes the game.
-2.Game.Game(gameBoard) initializes the game.
-3.Game.ValidMoves() returns valid moves as a vector of string.
-4.Game.Play(move) plays the move and returns if successful.
-    Also updates move (so that it matches ValidMoves()).
-5.Game.IfPlay(move) returns the new board after playing the move.
-    or "#" if the move is incorrect.
-    This does not change the state of Game.
-    Does not update move.
-6.Game.State() returns
-    -1: game on
-    0 : player 0 wins
-    1 : player 1 wins
-    2 : draw
-7.Game.GameOn() returns if the game is still going on.
-8.Game.Player() returns the next player to move.
-
-Rules from gameplay.h:
-1.Game.Board() returns the game board.
-2.Game.Show() prints the game board
-3.Game.History() returns a string of move history
-
-Rules from class Game itself:
-1.UpdateState()
-    updating state according to the game board.
+    to indicate if the player's turn has ended.
 */
 template <class Game>
 class GameTest
@@ -83,13 +55,17 @@ class GameTest
     5. Game.Play():
         plays a move.
         return true if successful, false otherwise.
+    6. Game.State():
+        returns -1,0,1 or 2
     */
-    bool Test_BasicGamePlay(int T = 100)
+    bool Test_BasicGamePlay(int T = 100, bool show = false)
     {
         std::string msg;
         bool pass = true;
         for (int t = 0; t < T && pass; ++t)
         {
+            if (show)
+                printf("t=%d\n", t);
             Game game;
             if (game.Player())
             {
@@ -97,6 +73,91 @@ class GameTest
                 pass = false;
                 break;
             }
+            if (!game.GameOn())
+            {
+                msg = "GameOn() returns false after Game()";
+                pass = false;
+                break;
+            }
+            int Count = 0;
+            while (game.GameOn() && pass)
+            {
+                //printf("Count=%d\n", Count);
+                if (Count++ >= 1000)
+                {
+                    //game.Show();
+                    msg = "Game takes too long";
+                    pass = false;
+                    break;
+                }
+                std::vector<std::string> Moves = game.ValidMoves();
+                int N = Moves.size();
+                if (!N)
+                {
+                    msg = "ValidMoves() returns empty vector when GameOn() is true";
+                    pass = false;
+                    break;
+                }
+                //game.Show();
+                bool success = game.Play(Moves[rand() % N]);
+                if (!success)
+                {
+                    msg = "Play() returns false for a valid move";
+                    pass = false;
+                    break;
+                }
+            }
+            if (!pass)
+                break;
+            if (!game.GameOn())
+            {
+                std::vector<std::string> Moves = game.ValidMoves();
+                if (!Moves.empty())
+                {
+                    msg = "ValidMoves() returns non-empty when GameOn() is false";
+                    pass = false;
+                    break;
+                }
+            }
+            if (game.State() >= 0 && game.State() <= 2)
+            {
+                //This is normal, do nothing
+            }
+            else
+            {
+                if (game.State() == -1)
+                    msg = "Game Ends with a state of -1";
+                else
+                    msg = "Game Ends with invalid state";
+                pass = false;
+                break;
+            }
+        }
+        Log("Test_BasicGamePlay", pass, msg);
+        return pass;
+    }
+    /*
+    Test_MultipleRoundGamePlay:
+    1.Game.Reset()
+        use the result of last game to
+        initialize this  game.
+    2.Game.Result()
+        returns the result
+        passed to Reset()
+    3.Game.GameOn()
+    4.Game.ValidMoves()
+    5.Game.Play()
+    
+    */
+    bool Test_MultipleRoundGamePlay(int T = 100)
+    {
+        std::string msg;
+        std::string result;
+        bool pass = true;
+        Game game;
+        for (int t = 0; t < T && pass; ++t)
+        {
+            game.Reset(result);
             if (!game.GameOn())
             {
                 msg = "GameOn() returns false after Game()";
@@ -130,14 +191,88 @@ class GameTest
                     pass = false;
                 }
             }
+            result = game.Result();
         }
-        Log("Test_BasicGamePlay", pass, msg);
+        Log("Test_MultipleRoundGamePlay", pass, msg);
+        return pass;
+    }
+    /*
+    Test_IfPlay():
+    1.Game.IfPlay(move)
+        Plays the move without updating the board.
+        returns the updated board
+    2.Game.Game(Board)
+        Use Board to initialize game
+    3.Game.Board()
+        returns the game board
+    4.Game.MoveHistory()
+        returns the move history
+    5.Game.Play()
+    6.Game.GameOn()
+    7.Game.ValidMoves()
+    */
+    bool Test_IfPlay(int T = 100)
+    {
+        std::string msg;
+        bool pass = true;
+        Game A, B;
+        for (int t = 0; t < T && pass; t++)
+        {
+            while (A.GameOn() && pass)
+            {
+                std::vector<std::string> Moves = A.ValidMoves();
+                int N = Moves.size();
+                if (!N)
+                {
+                    msg = "ValidMoves() returns empty vector when GameOn() is true";
+                    pass = false;
+                    break;
+                }
+                //Let B be a clone of A
+                B = Game(A.Board());
+
+                //choose a move for A
+                std::string move = Moves[rand() % N];
+                std::string HistoryBeforePlay = A.History();
+                bool success = A.Play(move);
+                if (!success)
+                {
+                    msg = "Play() returns false for a valid move";
+                    pass = false;
+                    break;
+                }
+                //Test MoveHistory()
+                if (A.History().length() <= HistoryBeforePlay.length())
+                {
+                    msg = "History() does not grow after play";
+                    pass = false;
+                    break;
+                }
+                //Test IfPlay()
+                std::string old_Board = B.Board();
+                if (B.IfPlay(move) != A.Board())
+                {
+                    msg = "IfPlay() returns different game board than Play()";
+                    pass = false;
+                    break;
+                }
+                if (B.Board() != old_Board)
+                {
+                    msg = "IfPlay() changes game board";
+                    pass = false;
+                    break;
+                }
+            }
+        }
+        Log("Test_IfPlay", pass, msg);
         return pass;
     }
     bool TestAll(bool showMsg = false)
     {
         bool pass = true;
         pass = pass && Test_BasicGamePlay();
+        pass = pass && Test_MultipleRoundGamePlay();
+        pass = pass && Test_IfPlay();
         if (showMsg)
         {
             ShowLog();

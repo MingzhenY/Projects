@@ -122,11 +122,25 @@ but in Game, they are seperate from Game.board as Game.player and Game.state.
 3.Added games.h that stored all the defined games.
     The basic requirements are stated at the start of the file.
 
-4.Rewrite mcts.h and main.h
+4.Rewrite mcts.h and main.cpp
     The first character of a move now indicates whether the player's
     turn ends.
 
-## More Work under V4
+5.Added the game Adi from "The complete mancala games" by Larry Russ page 59.
+In a move, a player picks up all the seeds in a pit and place them one by one
+counterclockwise starting from the next pit. As long as the last seed does
+not lands in a pit that has 0 or 3 seeds(1 or 4 after adding the last seed),
+the player picks up all the seeds in this pit and start again.
+
+There are situations where a move goes into a loop and never ends. This is
+not mentioned in the book. I split the remaining seeds evenly between two
+player when this happens.
+
+## Future Work
 
 1.Refine gametest.h
+
 2.Add more games in games.h
+
+3.Store the MCTS nodes somehow, so that the program
+becomes smarter everytime you play.

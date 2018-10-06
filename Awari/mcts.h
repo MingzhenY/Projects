@@ -71,7 +71,7 @@ struct MCTS
     int SimLimit; //Simulation Limit
     double C;     //exploration parameter
     bool Error;   //Indicate Error
-    MCTS(std::string Board, double C = 0.8, int Limit = 10000)
+    MCTS(std::string Board, double C = 0.8, int Limit = 1000)
     {
         Init(Board, C, Limit);
     }
@@ -259,7 +259,7 @@ struct MCTS
         int i = 0;
         while (p)
         {
-            printf("%s(%.1f%%)  ", Root->Moves[i].c_str(), p->N * 100.0 / Root->N);
+            printf("%s(%.1f%%)  ", Root->Moves[i].substr(1).c_str(), p->N * 100.0 / Root->N);
             ++i;
             p = p->next;
         }

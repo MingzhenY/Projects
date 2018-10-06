@@ -96,14 +96,12 @@ There are requirements from mcts.h and also awari.cpp.
 After Play(), included in each move is the number of stones sowed and captured.
 For example, F3X1 means sowed 3 stones, captured 1 stones.
 
-If After Play(), a move ends with '|', it means that the player has additional turns.
+If After Play(), a ends starts with '|', it means that the player has additional turns.
 So a move has 3 parts:
 
 * ActualMove
-
-* MoveInfo
-
-* does the player has another turn)
+* MoveInfo(Optional)
+* does the player has another turn
 
 After Expanding, MCT->Moves stores moves with all the information.
 
@@ -115,27 +113,20 @@ The ending '|' is needed when selecting the best childnode.
 In old Awari.h, MCT->Board includes in the string the player to move and the state of the game,
 but in Game, they are seperate from Game.board as Game.player and Game.state.
 
-5.Added gametest.h that checks if a game class works well with mcts.h.
+## Changes from V3 to V4
 
-## More Work under V3
+1.Added gametest.h that checks if a game class is well defined.
 
-1.The requirements of the class Game is not complete.
-There are requirements from mcts.h and also game.cpp.
+2.Added gameplay.h that has all the gameplay codes.
 
-2.(Done) Add game history in game.cpp
+3.Added games.h that stored all the defined games.
+    The basic requirements are stated at the start of the file.
 
-3.Should I add awari rule 7 to Mancala?
-The awari rules seems more resonable.
-More testing is needed.
+4.Rewrite mcts.h and main.h
+    The first character of a move now indicates whether the player's
+    turn ends.
 
-4.Should add a gameplay.h that deals with
-    a player playing the game with computer.
-    And with better game display.
+## More Work under V4
 
-5.(In Progress)Should add a gametest.h that makes sure the class game
-    satisfies all the requirements so that it works well with
-    mcts.h and gameplay.h .
-    For example, test for default values since there are a lot of strings
-
-6.There might be a better way to pass the information that a player
-    has another turn to MCTS.
+1.Refine gametest.h
+2.Add more games in games.h

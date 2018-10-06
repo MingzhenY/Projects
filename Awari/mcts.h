@@ -11,10 +11,10 @@ The minimal requirements of the game class.
 A game board is represented by std::string.
 A move is represented by std::string.
 */
-class GameName
+class Game
 {
   public:
-    GameName(std::string Board)
+    Game(std::string Board)
     {
         Init(Board);
     }
@@ -27,7 +27,7 @@ class GameName
     {
     }
     //Return valid moves
-    std::vector<std::string> ValidMovesVec()
+    std::vector<std::string> ValidMoves()
     {
         return {};
     }
@@ -88,51 +88,52 @@ struct MCTS
     {
         if (!Root)
         {
+            printf("Error in nextMove: empty Root");
             return "#";
         }
         //Add new nodes until reach Limit
         while (SimCount < SimLimit && !Error)
         {
-            MCT *p = Select(Root);
-            Expand(p);
+            Expand(Select(Root));
         }
         if (Error)
         {
+            printf("Error in nextMove:simulation\n");
             return "#";
         }
         //choose the most robust child
         //i.e. the child with most simulations
-        std::string Move = "#";
-        int bestCount, I = 0;
+        std::string bestMove = "#";
+        int bestN, I = 0;
         for (MCT *t = Root->leftchild; t; t = t->next, ++I)
         {
-            if (Move == "#" ||
-                t->N > bestCount)
+            if (bestMove == "#" ||
+                t->N > bestN)
             {
-                Move = Root->Moves[I];
-                bestCount = t->N;
+                bestMove = Root->Moves[I];
+                bestN = t->N;
             }
         }
-        return Move;
+        return bestMove;
     }
     MCT *Select(MCT *p)
     {
         while (p && p->leftchild)
         {
-            //select the best child to expand
-            MCT *temp = p->leftchild;
+            //select the best leaf to expand
+            MCT *current_child = p->leftchild;
             MCT *best_child = NULL;
             double best_value;
             int I = 0;
-            while (temp)
+            while (current_child)
             {
-                double value = (p->Moves[I][p->Moves[I].length() - 1] == '|' ? temp->X : -temp->X) + C * sqrt(2 * log(p->N) / temp->N);
-                if (best_child == NULL || value > best_value)
+                double current_value = (p->Moves[I][0] ? -current_child->X : current_child->X) + C * sqrt(log(p->N) / current_child->N);
+                if (best_child == NULL || current_value > best_value)
                 {
-                    best_value = value;
-                    best_child = temp;
+                    best_value = current_value;
+                    best_child = current_child;
                 }
-                temp = temp->next;
+                current_child = current_child->next;
                 ++I;
             }
             p = best_child;
@@ -159,7 +160,7 @@ struct MCTS
         }
 
         Game game(rt->Board);
-        rt->Moves = game.ValidMovesVec();
+        rt->Moves = game.ValidMoves();
         if (!rt->Moves.empty())
         {
             for (int k = rt->Moves.size() - 1; k >= 0; --k)
@@ -185,11 +186,24 @@ struct MCTS
     //returns 1,0,-1 for win,draw and lose
     int Simulation(MCT *rt)
     {
+        return RandomSimulation(rt);
+    }
+    int RandomSimulation(MCT *rt)
+    {
         Game game(rt->Board);
-        int result = game.RandomSimulation();
+        bool player = game.Player();
+        while (game.GameOn())
+        {
+            std::vector<std::string> Moves = game.ValidMoves();
+            game.Play(Moves[rand() % Moves.size()]);
+        }
         rt->n++;    //increase node simulation count
         SimCount++; //increase global simulation count
-        return result;
+
+        int state = game.State();
+        return state == 2 ? 0
+                          : state == player ? 1
+                                            : -1;
     }
     void Update(MCT *rt, int result)
     {

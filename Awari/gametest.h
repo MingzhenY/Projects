@@ -64,7 +64,7 @@ class GameTest
         bool pass = true;
         for (int t = 0; t < T && pass; ++t)
         {
-            if (show)
+            if (show && (t % 1000 == 0))
                 printf("t=%d\n", t);
             Game game;
             if (game.Player())
@@ -82,10 +82,10 @@ class GameTest
             int Count = 0;
             while (game.GameOn() && pass)
             {
-                //printf("Count=%d\n", Count);
                 if (Count++ >= 1000)
                 {
-                    //game.Show();
+                    if (show)
+                        game.Show();
                     msg = "Game takes too long";
                     pass = false;
                     break;
@@ -94,6 +94,8 @@ class GameTest
                 int N = Moves.size();
                 if (!N)
                 {
+                    if (show)
+                        game.Show();
                     msg = "ValidMoves() returns empty vector when GameOn() is true";
                     pass = false;
                     break;
@@ -147,6 +149,7 @@ class GameTest
     3.Game.GameOn()
     4.Game.ValidMoves()
     5.Game.Play()
+    6.Should also consider the change of palyer.
     
     */
     bool Test_MultipleRoundGamePlay(int T = 100)
@@ -267,11 +270,10 @@ class GameTest
         Log("Test_IfPlay", pass, msg);
         return pass;
     }
-    bool TestAll(bool showMsg = false)
+    bool Test_SingleGame(bool showMsg = false)
     {
         bool pass = true;
         pass = pass && Test_BasicGamePlay();
-        pass = pass && Test_MultipleRoundGamePlay();
         pass = pass && Test_IfPlay();
         if (showMsg)
         {

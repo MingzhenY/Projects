@@ -13,7 +13,7 @@ class GamePlay
     {
         srand(time(NULL));
     }
-    void Game_MCTS(bool computerFirst = true, double C = 0.8, int SimCount = 1000)
+    void Single_MCTS(bool computerFirst = true, double C = 1.0, int SimCount = 10000)
     {
         Game game;
         game.Show();

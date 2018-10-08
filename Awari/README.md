@@ -2,8 +2,7 @@
 
 ## Motivation
 
-After reading the AlphaZero paper, the idea that the program learns only by selfplay
-is interesting, the only inputs needed are the game rules.
+After reading the AlphaZero paper, the idea that the program learns only by selfplay is interesting, the only inputs needed are the game rules.
 
 AlphaZero uses neural network and MCTS(Monte-Carlo Tree Search).
 Didn't know much about neural networks, but MCTS seems easy to implement.
@@ -136,11 +135,19 @@ There are situations where a move goes into a loop and never ends. This is
 not mentioned in the book. I split the remaining seeds evenly between two
 player when this happens.
 
+6.Added the game Awari(called Oware on Wikipedia).
+The rules I used here comes from the paper "Searching for Solutions in Games and Artificial Intelligence" by Louis Victor Allis
+
 ## Future Work
+1.Add more games in games.h
 
-1.Refine gametest.h
-
-2.Add more games in games.h
-
-3.Store the MCTS nodes somehow, so that the program
+2.Store the MCTS nodes somehow, so that the program
 becomes smarter everytime you play.
+
+3.implement Multi_MCTS when the outcome of a game will change
+how the rest of the games are played.
+
+4.The game class should has a function that terminates the game early.
+This can be used to determin the winner before the game ends.
+For example, in a random simulation, if the game goes into a infinite
+loop(or takes too long), terminate early and estimate the outcome.

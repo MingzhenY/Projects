@@ -4,7 +4,7 @@
 All the mancala games come from "The Complete mancala games Book" by Larry Russ
 This book will be refered to as "the book" in the rest of this file.
 There are many different rules played in diffrent part of the world.
-I will implement most interesting ones here.
+I will implement interesting ones here.
 
 
 Below are requirements from different sources:
@@ -30,11 +30,7 @@ Rules from gameplay.h:
 1.Game.Board() returns the game board.
 2.Game.Show() prints the game board
 3.Game.History() returns a string of move history
-4.Game.Result() returns a string of result.
-    This is needed because the result of some of the games
-    will affect how the next games are played.
-5.Game.Reset(result)
-    Set up the game according to result.
+
 */
 class TicTacToe
 {
@@ -52,14 +48,6 @@ class TicTacToe
     TicTacToe(std::string _Board)
     {
         board = _Board;
-        moveHistory = "";
-    }
-    void Reset(std::string _Result)
-    { //Past results have no effect on TicTactoe
-        //The same as TicTacToe()
-        board = std::string(11, '.');
-        board[9] = false;
-        board[10] = -1;
         moveHistory = "";
     }
     std::vector<std::string> ValidMoves()
@@ -151,12 +139,6 @@ class TicTacToe
     {
         return moveHistory;
     }
-    std::string Result()
-    {
-        //Past results have no effect on TicTactoe
-        //So return nothing here
-        return "";
-    }
     void Show()
     {
         printf("%c|%c|%c\n", board[0], board[1], board[2]);
@@ -245,31 +227,6 @@ class Adi
     {
         board = Board;
         owner = OWNER(Board);
-    }
-    void Reset(std::string result)
-    {
-        board = std::string(18, char(4));
-        board[12] = board[13] = 0;
-        PLAYER(board) = result[0] > result[1];
-        STATE(board) = -1;
-        //Determine territory
-        bool PlayerWithMoreSeeds = result[0] >= result[1];
-        int current_pit = PlayerWithMoreSeeds ? 6 : 0;
-        int current_seed = result[PlayerWithMoreSeeds];
-        if (PlayerWithMoreSeeds)
-            owner = 0;
-        else
-            owner = (1 << 12) - 1;
-
-        while (current_seed >= 4)
-        {
-            //mark current pit
-            owner = owner | (PlayerWithMoreSeeds << current_pit);
-            current_seed -= 4;
-            current_pit = (current_pit + 1) % 12;
-        }
-        board[16] = owner >> 6;
-        board[17] = owner & 63;
     }
     std::vector<std::string> ValidMoves()
     {
@@ -440,11 +397,338 @@ class Adi
     {
         return moveHistory;
     }
-    std::string Result()
-    {
-        return board.substr(12, 2);
-    }
 #undef PLAYER
 #undef STATE
 #undef OWNER
+};
+
+/*
+Awari
+    Game Board:
+        f   e   d   c   b   a    
+    12  5   4   3   2   1   0    
+        6   7   8   9  10  11  13
+        A   B   C   D   E   F    
+    
+    Player 0 controls pits 0 to 5 and pit 13. pit 13 is used to store captured stones.
+    Player 1 controls pits 6 to 12 where pit 12 is used to store captured stones.
+    pits 0 to 5 are called a to f.
+    pits 6 to 11 are called A to F.
+
+    The rules I used here comes from the paper "Searching for Solutions 
+    in Games and Artificial Intelligence" by Louis Victor Allis
+
+    Awari Rules(one of the versions):
+    1. At the start of the game, each pit(except for 12 and 13) has 4 stones.
+    2. At each step a player selects a non-empty pit X from his/her row, starting 
+        with X's neighbor, he/she then sows all stones from X, one at a time, 
+        counter-clockwise over the board(omitting 12 and 13 and itself). After 
+        the move, X will be empty even if X has 12 stones or more. Captured Stones 
+        are removed and stored in either pit 12 or 13, depending on the player.
+    3. Stones are captured if the last stone sown lands in an enemy pit which after 
+        landing contains 2 or 3 stones. If such a capture is made, and the preceding 
+        pit contains 2 or 3 stones and the pit is an enemy pit, those stones are also 
+        captured. This procedure is successively repeated for the pits preceding and 
+        ends as soon as a pit is encountered containing a number of stones other than 
+        2 or 3, or the end of the opposing row is reached.
+    4. A move is described by the name of the pit, followed by the number of stones sown
+        (the name of the pit by itself defines the move, but such a notations is prone to error).
+        The number of stones captured, if any, is indicated by the amount preceded by a "x".
+        For example: A1, C4 x 2, D19 x 7, ...
+    5. End of the game:
+    5.1. The Goal of awari is to capture more stones than the opponent. The game ends 
+        as soon as one of the player has collected 25 or more stones.
+    5.2. If a player is unable to move, the remaining stones are captured by the opponent. 
+    5.3. If the same position is encountered for the third time, with the same player to move, 
+        the remaining stones on the board are evenly devided among the players.
+    6. The winner is the player who captured the most stones. If both players capture 24 stones, 
+        the game is drawn.
+    7. A last rule exists to prevent players from running out of moves early in the game. Whenever 
+        possible, a player is forced to choose a move such that the opponent is able to make a reply 
+        move. It is, however, not compulsory to look several moves ahead to ensure that the opponent 
+        will continue to be able to reply. 
+*/
+
+class Awari
+{
+#define PLAYER(board) board[14]
+#define STATE(board) board[15]
+    std::string board;
+    std::string moveHistory;
+
+    int validCount;
+    bool isMoveValid[6];
+    std::string nextMove[6];
+    std::string nextBoard[6];
+
+    int StepCount;
+
+  public:
+    Awari()
+    {
+        Init();
+    }
+    Awari(std::string Board)
+    {
+        Init(Board);
+    }
+    void Init()
+    {
+        board = std::string(16, char(4));
+        board[12] = board[13] = 0;
+        PLAYER(board) = false;
+        STATE(board) = -1;
+        StepCount = 0;
+        NextMoves();
+    }
+    void Init(std::string Board)
+    {
+        if (Board.length() == 16)
+        {
+            board = Board;
+            StepCount = 0;
+            NextMoves();
+        }
+        else
+        {
+            Init();
+        }
+    }
+    int State()
+    {
+        return STATE(board);
+    }
+    bool GameOn()
+    {
+        return State() == -1;
+    }
+    void ClearTable(std::string &Board, bool even_split = false)
+    {
+        //Sum up the stones on the board
+        int Sum = 0;
+        for (int i = 0; i < 12; ++i)
+        {
+            Sum += Board[i];
+            Board[i] = 0;
+        }
+
+        if (even_split)
+        {
+            //split evenly
+            Board[12] += Sum / 2;
+            Board[13] += Sum / 2;
+            if (Sum & 1)
+            {
+                if (Board[12] > Board[13])
+                    ++Board[12];
+                else
+                    ++Board[13];
+            }
+        }
+        else
+        {
+            //If one player cannot reply at his turn
+            //all the stones belong to the other player
+            Board[13 - PLAYER(Board)] += Sum;
+        }
+    }
+    void UpdateState(std::string &Board)
+    {
+        if (!GameOn())
+            return;
+        //if one cannot move, all remaining stones belong to opponent
+        int Sum = 0;
+        for (int base = PLAYER(Board) ? 6 : 0, k = 0; k < 6; ++k)
+        {
+            Sum += Board[base + k];
+        }
+        if (0 == Sum)
+        {
+            ClearTable(Board);
+        }
+        //check for winner
+        if (Board[12] >= 25 || Board[13] >= 25)
+        {
+            //a player wins
+            STATE(Board) = Board[13] >= 25;
+        }
+        else if (Board[12] + Board[13] == 48 &&
+                 Board[12] == Board[13])
+        {
+            STATE(Board) = 2;
+        }
+    }
+    void UpdateState()
+    {
+        UpdateState(board);
+    }
+    bool Play(std::string &Board, std::string &Move)
+    {
+        int pitn = -1;
+        if (PLAYER(Board) && Move[1] >= 'A' && Move[1] <= 'F')
+        {
+            pitn = Move[1] - 'A' + 6;
+        }
+        if (!PLAYER(Board) && Move[1] >= 'a' && Move[1] <= 'f')
+        {
+            pitn = Move[1] - 'a';
+        }
+        if (-1 == pitn || 0 == Board[pitn])
+        {
+            //cannot play the move
+            return false;
+        }
+        int sow = Board[pitn], capture = 0;
+        //Sow
+        int cnt = pitn, nstone = sow;
+        Board[pitn] = 0;
+        while (nstone-- > 0)
+        {
+            //move up one pit
+            cnt = (cnt + 1) % 12;
+            //skip self
+            cnt += cnt == pitn;
+            cnt %= 12;
+            //put a stone
+            Board[cnt]++;
+        }
+        //Capture
+        int base = PLAYER(Board) ? 0 : 6;
+        while ((Board[cnt] == 2 || Board[cnt] == 3) &&
+               cnt >= base && cnt - base <= 5)
+        {
+            //capture
+            capture += Board[cnt];
+            Board[cnt] = 0;
+            //move cnt backwards and check again
+            cnt = (cnt + 11) % 12;
+        }
+        Board[12 + PLAYER(Board)] += capture;
+        Move = Move.substr(0, 2) + std::to_string(sow) + "X" + std::to_string(capture);
+        PLAYER(Board) = !PLAYER(Board);
+        UpdateState(Board);
+        return true;
+    }
+    void NextMoves()
+    {
+        //Clear everything when game ends
+        if (!GameOn())
+        {
+            memset(isMoveValid, 0, sizeof(isMoveValid));
+            validCount = 0;
+            return;
+        }
+        bool canReply[6];
+        int replyCount;
+        replyCount = validCount = 0;
+        //try all 6 moves
+        std::vector<std::string> moves;
+        if (PLAYER(board))
+            moves = std::vector<std::string>{"A", "B", "C", "D", "E", "F"};
+        else
+            moves = std::vector<std::string>{"a", "b", "c", "d", "e", "f"};
+
+        for (int k = moves.size() - 1; k >= 0; --k)
+        {
+            //store results in NextBoard[k]
+            nextBoard[k] = board;
+            nextMove[k] = std::string("#") + moves[k];
+            isMoveValid[k] = Play(nextBoard[k], nextMove[k]);
+            if (isMoveValid[k])
+            {
+                validCount++;
+                canReply[k] = false;
+                for (int base = PLAYER(board) ? 0 : 6, i = 0; i < 6; ++i)
+                {
+                    canReply[k] = canReply[k] || nextBoard[k][base + i] > 0;
+                }
+                replyCount += canReply[k];
+            }
+        }
+        //check for rule 7
+        if (replyCount == 0 || replyCount == validCount)
+        {
+            //if all can reply or all cannot reply
+            //do nothing
+        }
+        else
+        {
+            //if some cannot reply
+            //eliminate the moves where the opponent cannot reply
+            validCount = 0;
+            for (int k = 0; k < 6; ++k)
+            {
+                isMoveValid[k] = isMoveValid[k] && canReply[k];
+                validCount += isMoveValid[k];
+            }
+        }
+    }
+    bool Play(std::string &Move)
+    {
+        for (int k = 0; k < 6; ++k)
+        {
+            if (isMoveValid[k] && nextMove[k][1] == Move[1])
+            {
+                board = nextBoard[k];
+                //Move is updated here
+                Move = nextMove[k];
+                moveHistory += Move[1];
+                //Clear Table if more than 1000 steps.
+                if (++StepCount >= 1000)
+                {
+                    ClearTable(board, true);
+                    UpdateState(board);
+                }
+                NextMoves();
+                return true;
+            }
+        }
+        return false;
+    }
+    std::string IfPlay(std::string &Move)
+    {
+        for (int k = 0; k < 6; ++k)
+        {
+            if (isMoveValid[k] && nextMove[k][1] == Move[1])
+            {
+                Move = nextMove[k];
+                return nextBoard[k];
+            }
+        }
+        return "#";
+    }
+    std::vector<std::string> ValidMoves()
+    {
+        std::vector<std::string> ret;
+        for (int k = 0; k < 6; ++k)
+        {
+            if (isMoveValid[k])
+            {
+                ret.push_back(nextMove[k]);
+            }
+        }
+        return ret;
+    }
+    std::string Board()
+    {
+        return board;
+    }
+    std::string History()
+    {
+        return moveHistory;
+    }
+    bool Player()
+    {
+        return PLAYER(board);
+    }
+    void Show()
+    {
+        printf("      f   e   d   c   b   a\n");
+        printf("%3d %3d %3d %3d %3d %3d %3d\n", board[12], board[5], board[4], board[3], board[2], board[1], board[0]);
+        printf("    %3d %3d %3d %3d %3d %3d %3d\n", board[6], board[7], board[8], board[9], board[10], board[11], board[13]);
+        printf("      A   B   C   D   E   F\n\n");
+        printf("--------------------------------\n\n\n");
+    }
+#undef PLAYER
+#undef STATE
 };

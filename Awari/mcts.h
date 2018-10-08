@@ -192,8 +192,14 @@ struct MCTS
     {
         Game game(rt->Board);
         bool player = game.Player();
+        int Count = 0;
         while (game.GameOn())
         {
+            if (++Count >= 100)
+            {
+                game.Halt();
+                break;
+            }
             std::vector<std::string> Moves = game.ValidMoves();
             game.Play(Moves[rand() % Moves.size()]);
         }

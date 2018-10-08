@@ -7,8 +7,9 @@ There are many different rules played in diffrent part of the world.
 I will implement interesting ones here.
 
 
-Below are requirements from different sources:
-Rules from mcts.h:
+Below are requirements for the Game class
+
+To pass GameTest.Test_SimgleGame():
 1.Game.Game() initializes the game.
 2.Game.Game(gameBoard) initializes the game.
 3.Game.ValidMoves() returns valid moves as a vector of string.
@@ -25,12 +26,15 @@ Rules from mcts.h:
     2 : draw
 7.Game.GameOn() returns if the game is still going on.
 8.Game.Player() returns the next player to move.
+9.Game.Halt() terminates the game early and 
+    estimates the outcome.
+10.Game.Board() returns the game board.
+11.Game.Show() prints the game board
+12.Game.History() returns a string of move history
 
-Rules from gameplay.h:
-1.Game.Board() returns the game board.
-2.Game.Show() prints the game board
-3.Game.History() returns a string of move history
-
+To pass GameTest.Test_MultipleGame():
+1.Pass Test_SimgleGame()
+2.More
 */
 class TicTacToe
 {
@@ -68,6 +72,8 @@ class TicTacToe
     }
     bool Play(std::string &Move)
     {
+        if (Move.length() < 2)
+            return false;
         bool player = board[9];
         if (Move.length() > 1 &&
             Move[1] >= 'A' && Move[1] <= 'I' &&
@@ -85,8 +91,10 @@ class TicTacToe
     std::string IfPlay(std::string &Move)
     {
         TicTacToe TTT(board);
-        TTT.Play(Move);
-        return TTT.Board();
+        if (TTT.Play(Move))
+            return TTT.Board();
+        else
+            return "#";
     }
     void UpdateState()
     {
@@ -118,6 +126,11 @@ class TicTacToe
                 board[10] = board[positions[k][0]] == 'X';
             }
         }
+    }
+    void Halt()
+    {
+        //assume draw
+        board[10] = 2;
     }
     bool Player()
     {
@@ -339,8 +352,10 @@ class Adi
     std::string IfPlay(std::string &Move)
     {
         Adi game(board);
-        game.Play(Move);
-        return game.Board();
+        if (game.Play(Move))
+            return game.Board();
+        else
+            return "#";
     }
     void UpdateState()
     {
@@ -351,6 +366,14 @@ class Adi
                 STATE(board) = board[12] == board[13] ? 2
                                                       : board[13] > board[12];
             }
+        }
+    }
+    void Halt()
+    {
+        if (GameOn())
+        {
+            STATE(board) = board[12] == board[13] ? 2
+                                                  : board[13] > board[12];
         }
     }
     int State()
@@ -561,9 +584,15 @@ class Awari
     void UpdateState()
     {
         UpdateState(board);
+        if (!GameOn())
+        {
+            NextMoves();
+        }
     }
     bool Play(std::string &Board, std::string &Move)
     {
+        if (Move.length() < 2)
+            return false;
         int pitn = -1;
         if (PLAYER(Board) && Move[1] >= 'A' && Move[1] <= 'F')
         {
@@ -665,6 +694,8 @@ class Awari
     }
     bool Play(std::string &Move)
     {
+        if (Move.length() < 2)
+            return false;
         for (int k = 0; k < 6; ++k)
         {
             if (isMoveValid[k] && nextMove[k][1] == Move[1])
@@ -699,6 +730,8 @@ class Awari
     }
     std::vector<std::string> ValidMoves()
     {
+        if (!GameOn())
+            return {};
         std::vector<std::string> ret;
         for (int k = 0; k < 6; ++k)
         {
@@ -708,6 +741,11 @@ class Awari
             }
         }
         return ret;
+    }
+    void Halt()
+    {
+        ClearTable(board, true);
+        UpdateState(board);
     }
     std::string Board()
     {

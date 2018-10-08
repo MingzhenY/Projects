@@ -138,7 +138,17 @@ player when this happens.
 6.Added the game Awari(called Oware on Wikipedia).
 The rules I used here comes from the paper "Searching for Solutions in Games and Artificial Intelligence" by Louis Victor Allis
 
+7.Added Test_Halt() in gametest.h
+the class game now requires a function called Halt() to terminate
+the game early and estimate the outcome.
+
+8.Deleted the game Mancala.
+The rules for Mancala from the internet are not clear.
+Might add it back after reading the book "The complete mancala games book"
+by Larry Russ to figure out special cases.
+
 ## Future Work
+
 1.Add more games in games.h
 
 2.Store the MCTS nodes somehow, so that the program
@@ -147,7 +157,10 @@ becomes smarter everytime you play.
 3.implement Multi_MCTS when the outcome of a game will change
 how the rest of the games are played.
 
-4.The game class should has a function that terminates the game early.
-This can be used to determin the winner before the game ends.
-For example, in a random simulation, if the game goes into a infinite
-loop(or takes too long), terminate early and estimate the outcome.
+4.Add code in gametest.h to evaluate a game.
+For example, how complex is the game?
+How many calculation does it need in one move?
+How fair is the game?
+Does the first player has too much advantage?
+
+5.Is it possible to generate rules to help players play?

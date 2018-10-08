@@ -7,11 +7,28 @@
 #include "gameplay.h"
 #include "games.h"
 using namespace std;
+#define TEST_SINGLE_GAME(name)              \
+    GameTest<name> Test_##name;             \
+    if (Test_##name.Test_SingleGame(false)) \
+        printf("pass");                     \
+    else                                    \
+        printf("fail");                     \
+    printf(" ... %s\n", #name);
 
+void TestAllGames()
+{
+    printf("Testing Games:\n");
+    TEST_SINGLE_GAME(TicTacToe)
+    TEST_SINGLE_GAME(Adi)
+    TEST_SINGLE_GAME(Awari)
+    printf("\n\n");
+}
 int main()
 {
+    TestAllGames();
+
     GameTest<Awari> Test;
-    if (Test.Test_SingleGame(true))
+    if (Test.Test_SingleGame(false))
     {
         GamePlay<Awari> Game;
         Game.Single_MCTS(true, 1.0, 10000);

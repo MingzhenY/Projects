@@ -46,17 +46,19 @@ class GameTest
     2. Player()
         returns the player to move.
         player 0 goes first.
-    3. Game.GameOn():
+    3. GameOn():
         returns true if the game is still going on,
         false otherwise.
-    4. Game.ValidMoves():
+    4. ValidMoves():
         returns a vector of strings.
         each string represent a move the current player can make.
-    5. Game.Play():
+    5. Play():
         plays a move.
         return true if successful, false otherwise.
-    6. Game.State():
+    6. State():
         returns -1,0,1 or 2
+    7. Show():
+        to show the board when something goes wrong.
     */
     bool Test_BasicGamePlay(int T = 100, bool show = false)
     {
@@ -104,6 +106,8 @@ class GameTest
                 bool success = game.Play(Moves[rand() % N]);
                 if (!success)
                 {
+                    if (show)
+                        game.Show();
                     msg = "Play() returns false for a valid move";
                     pass = false;
                     break;
@@ -116,6 +120,8 @@ class GameTest
                 std::vector<std::string> Moves = game.ValidMoves();
                 if (!Moves.empty())
                 {
+                    if (show)
+                        game.Show();
                     msg = "ValidMoves() returns non-empty when GameOn() is false";
                     pass = false;
                     break;
@@ -127,6 +133,8 @@ class GameTest
             }
             else
             {
+                if (show)
+                    game.Show();
                 if (game.State() == -1)
                     msg = "Game Ends with a state of -1";
                 else
@@ -244,7 +252,7 @@ class GameTest
                     pass = false;
                     break;
                 }
-                //Test MoveHistory()
+                //Test History()
                 if (A.History().length() <= HistoryBeforePlay.length())
                 {
                     msg = "History() does not grow after play";
@@ -265,15 +273,126 @@ class GameTest
                     pass = false;
                     break;
                 }
+                std::string InvalidMove = "";
+                if (B.IfPlay(InvalidMove) != "#")
+                {
+                    msg = "IfPlay() should return # when move is invalid";
+                    pass = false;
+                    break;
+                }
             }
         }
         Log("Test_IfPlay", pass, msg);
+        return pass;
+    }
+    /*
+    Test_Halt:
+    Requirements:
+    1. Game():
+        initialize the game.
+    2. GameOn():
+        returns true if the game is still going on,
+        false otherwise.
+    3. ValidMoves():
+        returns a vector of strings.
+        each string represent a move the current player can make.
+    4. Play():
+        plays a move.
+        return true if successful, false otherwise.
+    5. State():
+        returns -1,0,1 or 2
+    6. Halt():
+        terminates the game early.
+        estimates the outcome.
+    7. Show():
+        to show the board when something goes wrong.
+    */
+    bool Test_Halt(int T = 100, bool show = false)
+    {
+        std::string msg;
+        bool pass = true;
+        for (int t = 0; t < T && pass; ++t)
+        {
+            if (show && (t % 1000 == 0))
+                printf("t=%d\n", t);
+            Game game;
+            int Count = 0;
+            while (game.GameOn() && pass)
+            {
+                if (Count++ >= 20)
+                {
+                    int random16 = Count >= 200 ? 7 : rand() & 15;
+                    if (random16 == 7)
+                    {
+                        game.Halt();
+                        if (game.GameOn())
+                        {
+                            if (show)
+                                game.Show();
+                            msg = "GameOn() returns true after Halt()";
+                            pass = false;
+                        }
+                        break;
+                    }
+                }
+                std::vector<std::string> Moves = game.ValidMoves();
+                int N = Moves.size();
+                if (!N)
+                {
+                    if (show)
+                        game.Show();
+                    msg = "ValidMoves() returns empty vector when GameOn() is true";
+                    pass = false;
+                    break;
+                }
+                bool success = game.Play(Moves[rand() % N]);
+                if (!success)
+                {
+                    if (show)
+                        game.Show();
+                    msg = "Play() returns false for a valid move";
+                    pass = false;
+                    break;
+                }
+            }
+            if (!pass)
+                break;
+            if (!game.GameOn())
+            {
+                std::vector<std::string> Moves = game.ValidMoves();
+                if (!Moves.empty())
+                {
+                    if (show)
+                        game.Show();
+                    msg = "ValidMoves() returns non-empty when GameOn() is false";
+                    pass = false;
+                    break;
+                }
+            }
+            if (game.State() >= 0 && game.State() <= 2)
+            {
+                //This is normal, do nothing
+            }
+            else
+            {
+                if (show)
+                    game.Show();
+                if (game.State() == -1)
+                    msg = "Game Ends with a state of -1";
+                else
+                    msg = "Game Ends with invalid state";
+                pass = false;
+                break;
+            }
+        }
+        Log("Test_Halt", pass, msg);
         return pass;
     }
     bool Test_SingleGame(bool showMsg = false)
     {
         bool pass = true;
         pass = pass && Test_BasicGamePlay();
+        pass = pass && Test_Halt();
         pass = pass && Test_IfPlay();
         if (showMsg)
         {

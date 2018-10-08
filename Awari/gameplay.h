@@ -22,8 +22,14 @@ class GamePlay
 
         bool flag = computerFirst;
         bool Error = false;
+        int Count = 0;
         while (game.GameOn() && !Error)
         {
+            if (++Count >= 200)
+            {
+                game.Halt();
+                break;
+            }
             std::string Move = "#";
             //MC.ShowNextMoves();
             bool Success = false;

@@ -21,16 +21,20 @@ void TestAllGames()
     TEST_SINGLE_GAME(TicTacToe)
     TEST_SINGLE_GAME(Adi)
     TEST_SINGLE_GAME(Awari)
+    TEST_SINGLE_GAME(Qelat)
     printf("\n\n");
 }
 int main()
 {
-    TestAllGames();
+    //TestAllGames();
 
-    GameTest<Awari> Test;
-    if (Test.Test_SingleGame(false))
+    GameTest<Qelat> Test;
+    //Test.Test_BasicGamePlay(10000, true);
+    //Test.ShowLog();
+    //return 0;
+    if (Test.Test_SingleGame(true))
     {
-        GamePlay<Awari> Game;
+        GamePlay<Qelat> Game;
         Game.Single_MCTS(true, 1.0, 10000);
     }
     return 0;

@@ -39,22 +39,14 @@ class GamePlay
                 Move = MC.nextMove();
                 MC.ShowNextMoves();
                 //printf("Move = %s\n", Move.c_str());
-                if (Move != "#")
-                {
-                    Success = game.Play(Move);
-                }
-                else
-                {
-                    printf("Computer failed\n");
-                    Error = true;
-                }
+                Success = game.Play(Move);
             }
             else
             {
+                MC.ShowNextMoves();
                 std::cin >> Move;
                 if (Move == "exit" || Move == "EXIT")
                     break;
-                //std::vector<std::string> Moves = Game.ValidMoves();
                 //Move = Moves[rand() % Moves.size()];
                 Move = std::string("#") + Move;
                 Success = game.Play(Move);

@@ -87,7 +87,13 @@ class GameTest
                 if (Count++ >= 1000)
                 {
                     if (show)
+                    {
                         game.Show();
+                        for (auto move : game.ValidMoves())
+                        {
+                            std::cout << move << std::endl;
+                        }
+                    }
                     msg = "Game takes too long";
                     pass = false;
                     break;
@@ -96,8 +102,7 @@ class GameTest
                 int N = Moves.size();
                 if (!N)
                 {
-                    if (show)
-                        game.Show();
+                    game.Show();
                     msg = "ValidMoves() returns empty vector when GameOn() is true";
                     pass = false;
                     break;

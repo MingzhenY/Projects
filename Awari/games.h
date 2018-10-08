@@ -770,3 +770,256 @@ class Awari
 #undef PLAYER
 #undef STATE
 };
+
+/*
+Qelat(From page 19 of the book):
+Game Board:
+   <-  <-  <-   ->  ->  ->
+    f   e   d   c   b   a    
+    5   4   3   2   1   0    
+    6   7   8   9  10  11 
+    A   B   C   D   E   F    
+   <-  <-  <-   ->  ->  ->
+
+Player 0 controls pits 0 to 5.
+Player 1 controls pits 6 to 11.
+Pits 0 to 5 are called a to f.
+Pits 6 to 11 are called A to F.
+
+Rules:
+1. At the start of the game, each pit has 4 stones.
+2. At each step a player selects a non-empty pit X that is not marked(explained later)
+    from his/her row, starting with X's neighbor, he/she then sows all 
+    stones from X, one at a time, in a certain direction. 
+
+    The direction depends on the starting pit.
+    d,e,f,D,E,F : counterclockwise
+    a,b,c,A,B,C : clockwise
+3. A player can only mark certain pits.
+    Player 0 can only mark a,f,A,B,E,F.
+    Player 1 can only mark A,F,a,b,e,f.
+    A pit is marked if the last stone is put in a pit with 3 stones(thus making a 4).
+4. If a player has no move left, the player passes the turn.
+5. The game ends when neither player can move or the game goes into an infinite loop.
+    The winner of the game is the one that accumulated the greater number of stones 
+    in his/her marked pits.
+
+Board:
+board[0..11] : actual board
+board[12..15] : record marked pit.
+    board[12..13]: if a pit is marked
+    board[14..15]: who marked the pit
+board[16] : player
+board[17] : state of the game
+*/
+
+class Qelat
+{
+#define IS_MARKED(board, k) ((board[12 + ((k) >= 6)] >> ((k) % 6)) & 1)
+#define OWNER_MARKED(board, k) ((board[14 + ((k) >= 6)] >> ((k) % 6)) & 1)
+#define MARK(board, k, player)                                          \
+    board[12 + ((k) >= 6)] = board[12 + ((k) >= 6)] | (1 << ((k) % 6)); \
+    if (player)                                                         \
+        board[14 + ((k) >= 6)] = board[14 + ((k) >= 6)] | (1 << ((k) % 6));
+#define PLAYER(board) board[16]
+#define STATE(board) board[17]
+    std::string board;
+    std::string moveHistory;
+
+  public:
+    Qelat()
+    {
+        Init();
+    }
+    void Init()
+    {
+        board = std::string(12, char(4)) + std::string(6, char(0));
+        PLAYER(board) = false;
+        STATE(board) = -1;
+    }
+    Qelat(std::string Board)
+    {
+        Init(Board);
+    }
+    void Init(std::string Board)
+    {
+        board = Board;
+    }
+    std::vector<std::string> ValidMoves()
+    {
+        if (!GameOn())
+            return {};
+        std::vector<std::string> ret;
+        for (int base = PLAYER(board) ? 6 : 0, k = 0; k < 6; ++k)
+        {
+            if (board[base + k] && !IS_MARKED(board, base + k))
+            {
+                ret.push_back(std::string("#") + char(base ? 'A' + k : 'a' + k));
+            }
+        }
+        if (ret.empty())
+            ret.push_back(std::string("#"));
+        return ret;
+    }
+    bool Play(std::string &Move)
+    {
+        if (Move.length() < 2)
+        {
+            //Pass the turn
+            if (Move == "#")
+            {
+                moveHistory += "#";
+                PLAYER(board) = !PLAYER(board);
+                return true;
+            }
+            else
+                return false;
+        }
+        int pitn = Move[1] >= 'a' ? Move[1] - 'a' : Move[1] - 'A' + 6;
+        if (IS_MARKED(board, pitn))
+        {
+            return false;
+        }
+        int Sow, SeedsLeft;
+        Sow = SeedsLeft = board[pitn];
+        board[pitn] = 0;
+        int direction = (pitn <= 2 || (pitn >= 6 && pitn <= 8)) ? 11 : 1;
+        //Sow
+        while (SeedsLeft-- > 0)
+        {
+            pitn = (pitn + direction) % 12;
+            board[pitn]++;
+        }
+        bool marked = false;
+        //Mark
+        if (!IS_MARKED(board, pitn) && board[pitn] == 4)
+        {
+            if ((!PLAYER(board) &&
+                 (pitn == 0 || pitn == 5 ||
+                  pitn == 6 || pitn == 11 ||
+                  pitn == 7 || pitn == 10)) ||
+                (PLAYER(board) &&
+                 (pitn == 0 || pitn == 5 ||
+                  pitn == 1 || pitn == 4 ||
+                  pitn == 6 || pitn == 11)))
+            {
+                MARK(board, pitn, PLAYER(board));
+                marked = true;
+            }
+        }
+        Move = Move.substr(0, 2) + std::to_string(Sow);
+        if (marked)
+            Move = Move + "X" + char(pitn < 6 ? 'a' + pitn : 'A' + pitn - 6);
+        moveHistory += Move[1];
+        PLAYER(board) = !PLAYER(board);
+        UpdateState();
+        return true;
+    }
+    std::string IfPlay(std::string &Move)
+    {
+        Qelat game(board);
+        if (game.Play(Move))
+            return game.Board();
+        else
+            return "#";
+    }
+    void UpdateState(std::string &Board)
+    {
+        //Check for normal ending
+        int N[2] = {0, 0};
+        for (int k = 0; k < 12; ++k)
+        {
+            if (IS_MARKED(Board, k))
+                N[OWNER_MARKED(Board, k)] += Board[k];
+        }
+        bool GameEnds = N[0] >= 25 ||
+                        N[1] >= 25 ||
+                        N[0] + N[1] == 48;
+        //Check for infinite loop
+        if (N[0] + N[1] >= 45)
+        {
+            bool LeftLoop = !IS_MARKED(Board, 5) &&
+                            !IS_MARKED(Board, 6) &&
+                            Board[5] + Board[6] == 1;
+            bool RightLoop = !IS_MARKED(Board, 0) &&
+                             !IS_MARKED(Board, 11) &&
+                             Board[0] + Board[11] == 1;
+            if (LeftLoop || RightLoop)
+                GameEnds = true;
+        }
+        //Findout result if game ends
+        if (GameEnds)
+        {
+            Halt(Board);
+        }
+    }
+    void UpdateState()
+    {
+        UpdateState(board);
+    }
+    void Halt(std::string &Board)
+    {
+        int N[2] = {0, 0};
+        for (int k = 0; k < 12; ++k)
+        {
+            if (IS_MARKED(Board, k))
+            {
+                N[OWNER_MARKED(Board, k)] += Board[k];
+            }
+        }
+        STATE(Board) = N[1] == N[0] ? 2
+                                    : N[1] > N[0];
+    }
+    void Halt()
+    {
+        Halt(board);
+    }
+    bool Player()
+    {
+        return PLAYER(board);
+    }
+    bool GameOn()
+    {
+        return State() == -1;
+    }
+    int State()
+    {
+        return STATE(board);
+    }
+    std::string Board()
+    {
+        return board;
+    }
+    void Show()
+    {
+        printf(" f   e   d   c   b   a\n");
+        for (int k = 5; k >= 0; --k)
+        {
+            printf("%2d", board[k]);
+            if (IS_MARKED(board, k))
+                printf("%c ", OWNER_MARKED(board, k) ? '_' : '^');
+            else
+                printf("  ");
+        }
+        printf("\n");
+        for (int k = 6; k < 12; ++k)
+        {
+            printf("%2d", board[k]);
+            if (IS_MARKED(board, k))
+                printf("%c ", OWNER_MARKED(board, k) ? '_' : '^');
+            else
+                printf("  ");
+        }
+        printf("\n");
+        printf(" A   B   C   D   E   F\n");
+    }
+    std::string History()
+    {
+        return moveHistory;
+    }
+#undef IS_MARKED
+#undef OWNER_MARKED
+#undef MARK
+#undef PLAYER
+#undef STATE
+};

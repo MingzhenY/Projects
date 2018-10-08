@@ -147,6 +147,11 @@ The rules for Mancala from the internet are not clear.
 Might add it back after reading the book "The complete mancala games book"
 by Larry Russ to figure out special cases.
 
+9.Added the game Qelat.
+Like Adi, it is possible to end up in an infinite loop(also not mentioned
+in the book).
+In this case, the stones not in a marked pit are ignored.
+
 ## Future Work
 
 1.Add more games in games.h

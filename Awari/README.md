@@ -107,6 +107,7 @@ After Expanding, MCT->Moves stores moves with all the information.
 3.Game.IfPlay now changes the input Move.
 This allows the MCT Node to store the updated move.
 The ending '|' is needed when selecting the best childnode.
+(Note: '|' in the end is changed to '#' at the start in V4 or later)
 
 4.In class Mancala, Game.board and MCT->Board are now exactly the same.
 In old Awari.h, MCT->Board includes in the string the player to move and the state of the game,
@@ -151,6 +152,11 @@ by Larry Russ to figure out special cases.
 Like Adi, it is possible to end up in an infinite loop(also not mentioned
 in the book).
 In this case, the stones not in a marked pit are ignored.
+
+10.Added the game Bechi
+
+11.Fixed a bug that some code thinks "#" is invalid move.
+A "#" move means the player passes the turn.
 
 ## Future Work
 

@@ -22,19 +22,19 @@ void TestAllGames()
     TEST_SINGLE_GAME(Adi)
     TEST_SINGLE_GAME(Awari)
     TEST_SINGLE_GAME(Qelat)
+    TEST_SINGLE_GAME(Bechi)
     printf("\n\n");
 }
 int main()
 {
-    //TestAllGames();
-
-    GameTest<Qelat> Test;
+    TestAllGames();
+    GameTest<Bechi> Test;
     //Test.Test_BasicGamePlay(10000, true);
     //Test.ShowLog();
     //return 0;
-    if (Test.Test_SingleGame(true))
+    if (Test.Test_SingleGame(false))
     {
-        GamePlay<Qelat> Game;
+        GamePlay<Bechi> Game;
         Game.Single_MCTS(true, 1.0, 10000);
     }
     return 0;

@@ -265,7 +265,11 @@ struct MCTS
         int i = 0;
         while (p)
         {
-            printf("%s(%.1f%%)  ", Root->Moves[i].substr(1).c_str(), p->N * 100.0 / Root->N);
+            if (Root->Moves[i] != "#")
+                printf("%s(%.1f%%)  ", Root->Moves[i].substr(1).c_str(), p->N * 100.0 / Root->N);
+            else
+                printf("#(%.1f%%)  ", p->N * 100.0 / Root->N);
+
             ++i;
             p = p->next;
         }

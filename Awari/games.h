@@ -1023,3 +1023,232 @@ class Qelat
 #undef PLAYER
 #undef STATE
 };
+
+/*
+Bechi(From page 17 of the book):
+Game Board:
+       <-  <-   ->  ->
+        d   c   b   a    
+    8   3   2   1   0    
+        4   5   6   7  9
+        A   B   C   D 
+       <-  <-   ->  ->
+
+Player 0 controls pits 0 to 3. Pit 8 stores captured stones.
+Player 1 controls pits 4 to 7. Pit 9 stores captured stones.
+Pits 0 to 3 are called a to d.
+Pits 4 to 7 are called A to D.
+
+1. At the start of the game, each pit has 6 stones.
+2. At each step a player selects a pit X that that has at least 2 stones
+    from his/her row. He/She then picks up all stones (except one) from X,
+    and distribute them one at a time, in a certain direction. 
+
+    The direction depends on the starting pit.
+    c,d,C,D : counterclockwise
+    a,b,A,B : clockwise
+3. If the last stone of a move lands in any pit which now contains an 
+    even number of stones(including the stone just dropped in it), the 
+    stones in this pit are captured and placed in the player's store.
+    In addition, if the following pit or pits also contain an even number
+    of stones, these too are captured.
+4. Stones can only be captured from a pit that previously in the game 
+    (including this move) has been chosen to begin a move.
+5. If it's a player's turn to move and he/she has no valid move,
+    he/she passes the turn and continue passing until he has a valid move.
+6. When neither player can move, each player captures the stones on his/her
+    side of the board. The player with more stones wins.
+*/
+class Bechi
+{
+#define IS_MARKED(board, k) ((board[10] >> (k)) & 1)
+#define MARK(board, k) \
+    board[10] = board[10] | (1 << (k))
+#define PLAYER(board) board[11]
+#define STATE(board) board[12]
+    std::string board;
+    std::string moveHistory;
+
+  public:
+    Bechi()
+    {
+        Init();
+    }
+    Bechi(std::string Board)
+    {
+        Init(Board);
+    }
+    void Init()
+    {
+        board = std::string(10, char(6)) + std::string(3, char(0));
+        board[8] = board[9] = 0;
+        PLAYER(board) = false;
+        STATE(board) = -1;
+    }
+    void Init(std::string Board)
+    {
+        if (Board.length() == 13)
+        {
+            board = Board;
+            moveHistory = "";
+        }
+        else
+            Init();
+    }
+    std::vector<std::string> ValidMoves()
+    {
+        if (!GameOn())
+            return {};
+        std::vector<std::string> ret;
+        for (int base = PLAYER(board) ? 4 : 0, k = 0; k < 4; ++k)
+        {
+            if (board[base + k] > 1)
+            {
+                ret.push_back(std::string("#") + char(base ? 'A' + k : 'a' + k));
+            }
+        }
+        //Pass the turn if no move left
+        if (ret.empty())
+            ret.push_back(std::string("#"));
+        return ret;
+    }
+    bool Play(std::string &Move)
+    {
+        if (Move.length() < 2)
+        {
+            //Pass the turn
+            if (Move == "#")
+            {
+                moveHistory += "#";
+                PLAYER(board) = !PLAYER(board);
+                return true;
+            }
+            else
+                return false;
+        }
+        int pitn = Move[1] >= 'a' ? Move[1] - 'a' : Move[1] - 'A' + 4;
+        int Sow, SeedsLeft, Capture;
+        Sow = SeedsLeft = board[pitn] - 1;
+        board[pitn] = 1;
+        int direction = (pitn <= 1 || (pitn >= 4 && pitn <= 5)) ? 7 : 1;
+        MARK(board, pitn);
+        //Sow
+        while (SeedsLeft-- > 0)
+        {
+            pitn = (pitn + direction) % 8;
+            board[pitn]++;
+        }
+        //Capture
+        Capture = 0;
+        while (board[pitn] > 0 &&
+               board[pitn] % 2 == 0 &&
+               IS_MARKED(board, pitn))
+        {
+            Capture += board[pitn];
+            board[pitn] = 0;
+            pitn = (pitn + direction) % 8;
+        }
+
+        Move = Move.substr(0, 2) + std::to_string(Sow) + "X" + std::to_string(Capture);
+        moveHistory += Move[1];
+        board[8 + PLAYER(board)] += Capture;
+        PLAYER(board) = !PLAYER(board);
+        UpdateState();
+        return true;
+    }
+    std::string IfPlay(std::string &Move)
+    {
+        Bechi Game(board);
+        if (Game.Play(Move))
+            return Game.Board();
+        else
+            return "#";
+    }
+    void UpdateState()
+    {
+        UpdateState(board);
+    }
+    void UpdateState(std::string &Board)
+    {
+        //Check for normal ending
+        bool GameEnds = Board[8] >= 25 ||
+                        Board[9] >= 25 ||
+                        Board[8] + Board[9] == 48;
+        //Check for no moves left
+        int NumberOfMoreThanOne = 0;
+        for (int i = 0; i < 8; ++i)
+            NumberOfMoreThanOne += board[i] >= 2;
+        if (NumberOfMoreThanOne == 0)
+        {
+            GameEnds = true;
+            Board[8] += Board[0] + Board[1] + Board[2] + Board[3];
+            Board[9] += Board[4] + Board[5] + Board[6] + Board[7];
+            for (int i = 0; i < 8; ++i)
+                Board[i] = 0;
+        }
+        //Findout result if game ends
+        if (GameEnds)
+        {
+            Halt(Board);
+        }
+    }
+    void Halt(std::string &Board)
+    {
+        STATE(Board) = Board[8] == Board[9] ? 2
+                                            : Board[9] > Board[8];
+    }
+    void Halt()
+    {
+        Halt(board);
+    }
+    int State()
+    {
+        return STATE(board);
+    }
+    bool GameOn()
+    {
+        return State() == -1;
+    }
+    bool Player()
+    {
+        return PLAYER(board);
+    }
+    std::string Board()
+    {
+        return board;
+    }
+    void Show()
+    {
+
+        printf("     d   c   b   a\n");
+        printf("%3d ", board[8]);
+        for (int k = 3; k >= 0; --k)
+        {
+            printf("%2d", board[k]);
+            if (!IS_MARKED(board, k))
+                printf("* ");
+            else
+                printf("  ");
+        }
+        printf("\n    ");
+        for (int k = 4; k < 8; ++k)
+        {
+            printf("%2d", board[k]);
+            if (!IS_MARKED(board, k))
+                printf("* ");
+            else
+                printf("  ");
+        }
+        printf("%3d ", board[9]);
+        printf("\n");
+        printf("     A   B   C   D\n");
+    }
+    std::string History()
+    {
+        return moveHistory;
+    }
+#undef IS_MARKED
+#undef MARK
+#undef PLAYER
+#undef STATE
+};

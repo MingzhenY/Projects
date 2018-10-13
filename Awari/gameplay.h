@@ -48,7 +48,8 @@ class GamePlay
                 if (Move == "exit" || Move == "EXIT")
                     break;
                 //Move = Moves[rand() % Moves.size()];
-                Move = std::string("#") + Move;
+                if (Move != "#")
+                    Move = std::string("#") + Move;
                 Success = game.Play(Move);
             }
 

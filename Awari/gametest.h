@@ -87,13 +87,7 @@ class GameTest
                 if (Count++ >= 1000)
                 {
                     if (show)
-                    {
                         game.Show();
-                        for (auto move : game.ValidMoves())
-                        {
-                            std::cout << move << std::endl;
-                        }
-                    }
                     msg = "Game takes too long";
                     pass = false;
                     break;
